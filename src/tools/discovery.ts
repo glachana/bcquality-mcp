@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './shared.js';
-import { LayerEnum, asTextContent } from './shared.js';
+import { LayerEnum, asTextContent, withErrorHandling } from './shared.js';
 import { matchesFilters } from '../search/filter.js';
 import { descriptionExcerpt } from '../parser/knowledge.js';
 
@@ -29,9 +29,9 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
           }),
         ),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ layers }) => {
+    withErrorHandling('bcquality_list_domains', async ({ layers }) => {
       const activeLayers = layers ?? ctx.config.layers;
       const map = new Map<string, { count: number; layers: Set<string> }>();
       for (const entry of ctx.index.knowledge) {
@@ -46,7 +46,7 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
         .map(([name, info]) => ({ name, fileCount: info.count, layers: [...info.layers].sort() }));
       const structuredContent = { domains };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 
   // --- list_knowledge ---
@@ -87,9 +87,9 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
         total: z.number().int(),
         nextOffset: z.number().int().optional(),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async (args) => {
+    withErrorHandling('bcquality_list_knowledge', async (args) => {
       const filtered = ctx.index.knowledge.filter((entry) =>
         matchesFilters(entry, {
           layer: args.layer,
@@ -131,7 +131,7 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
       const nextOffset = args.offset + args.limit < total ? args.offset + args.limit : undefined;
       const structuredContent = { items, total, nextOffset };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 
   // --- list_skills ---
@@ -164,9 +164,9 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
           }),
         ),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async (args) => {
+    withErrorHandling('bcquality_list_skills', async (args) => {
       const items = ctx.index.skills
         .filter((s) => !args.layer || s.ref.layer === args.layer)
         .filter((s) => !args.kind || s.parsed?.kind === args.kind)
@@ -189,6 +189,6 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
         });
       const structuredContent = { items };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 }

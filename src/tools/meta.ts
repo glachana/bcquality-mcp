@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './shared.js';
-import { asTextContent, layerSummary } from './shared.js';
+import { asTextContent, layerSummary, withErrorHandling, BCQualityError } from './shared.js';
 import { pullRepo } from '../repo/manager.js';
 
 export function registerMetaTools(server: McpServer, ctx: ServerContext) {
@@ -26,9 +26,9 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
         skillCount: z.number().int(),
         indexBuiltAt: z.string(),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async () => {
+    withErrorHandling('bcquality_status', async () => {
       const structuredContent = {
         repoPath: ctx.repo.path,
         source: ctx.repo.source,
@@ -40,7 +40,7 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
         indexBuiltAt: ctx.index.builtAt.toISOString(),
       };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 
   // --- refresh ---
@@ -60,8 +60,18 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
-    async () => {
-      const result = await pullRepo(ctx.repo.path);
+    withErrorHandling('bcquality_refresh', async () => {
+      let result;
+      try {
+        result = await pullRepo(ctx.repo.path);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new BCQualityError(
+          'BCQ_GIT_ERROR',
+          `git pull failed in ${ctx.repo.path}: ${msg}`,
+          'Check network access to the remote, verify the clone is not in a detached/dirty state, or re-clone via bcquality_status + a fresh setup.',
+        );
+      }
       ctx.reload();
       const structuredContent = {
         before: result.before,
@@ -70,6 +80,6 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
         rebuiltAt: new Date().toISOString(),
       };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 }

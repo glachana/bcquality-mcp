@@ -3,7 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './shared.js';
-import { asTextContent, resolveRepoPath } from './shared.js';
+import { asTextContent, resolveRepoPath, withErrorHandling } from './shared.js';
 import { parseKnowledgeFile } from '../parser/knowledge.js';
 import { parseSkillFile } from '../parser/skill.js';
 import { findExampleFiles } from '../repo/walker.js';
@@ -36,10 +36,10 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
         }),
         body: z.string(),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ path: relPath }) => {
-      const abs = resolveRepoPath(ctx, relPath);
+    withErrorHandling('bcquality_get_knowledge', async ({ path: relPath }) => {
+      const abs = resolveRepoPath(ctx, relPath, { allowedExtensions: ['.md'] });
       const parsed = parseKnowledgeFile(abs);
       const examples = findExampleFiles(abs);
       const toRel = (p?: string) =>
@@ -57,7 +57,7 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
         body: parsed.body,
       };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 
   // --- get_examples ---
@@ -79,10 +79,10 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
           .object({ path: z.string(), content: z.string() })
           .optional(),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ knowledgePath, kind }) => {
-      const abs = resolveRepoPath(ctx, knowledgePath);
+    withErrorHandling('bcquality_get_examples', async ({ knowledgePath, kind }) => {
+      const abs = resolveRepoPath(ctx, knowledgePath, { allowedExtensions: ['.md'] });
       const examples = findExampleFiles(abs);
       const toRel = (p: string) => path.relative(ctx.repo.path, p).split(path.sep).join('/');
       const out: { good?: { path: string; content: string }; bad?: { path: string; content: string } } = {};
@@ -93,7 +93,7 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
         out.bad = { path: toRel(examples.bad), content: fs.readFileSync(examples.bad, 'utf8') };
       }
       return { ...asTextContent(out), structuredContent: out };
-    },
+    }),
   );
 
   // --- get_skill ---
@@ -114,10 +114,10 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
         frontmatter: z.record(z.unknown()),
         body: z.string(),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ path: relPath }) => {
-      const abs = resolveRepoPath(ctx, relPath);
+    withErrorHandling('bcquality_get_skill', async ({ path: relPath }) => {
+      const abs = resolveRepoPath(ctx, relPath, { allowedExtensions: ['.md'] });
       const parsed = parseSkillFile(abs);
       const structuredContent = {
         path: relPath,
@@ -127,6 +127,6 @@ export function registerReadTools(server: McpServer, ctx: ServerContext) {
         body: parsed.body,
       };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 }

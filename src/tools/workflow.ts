@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ServerContext } from './shared.js';
-import { LayerEnum, asTextContent } from './shared.js';
+import { LayerEnum, asTextContent, withErrorHandling } from './shared.js';
 import { matchesFilters } from '../search/filter.js';
 import { scoreEntries } from '../search/score.js';
 import { applyLayerPrecedence } from '../repo/index.js';
@@ -39,9 +39,9 @@ export function registerWorkflowTools(server: McpServer, ctx: ServerContext) {
           }),
         ),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async (args) => {
+    withErrorHandling('bcquality_search_knowledge', async (args) => {
       const layers = args.layers ?? ctx.config.layers;
       const candidates = ctx.index.knowledge
         .filter((e) => layers.includes(e.ref.layer))
@@ -66,7 +66,7 @@ export function registerWorkflowTools(server: McpServer, ctx: ServerContext) {
       }));
       const structuredContent = { matches };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 
   // --- get_applicable_for_context ---
@@ -111,9 +111,9 @@ export function registerWorkflowTools(server: McpServer, ctx: ServerContext) {
           }),
         ),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async (args) => {
+    withErrorHandling('bcquality_get_applicable_for_context', async (args) => {
       const layers = args.layers ?? ctx.config.layers;
       const candidates = ctx.index.knowledge
         .filter((e) => layers.includes(e.ref.layer))
@@ -154,6 +154,6 @@ export function registerWorkflowTools(server: McpServer, ctx: ServerContext) {
 
       const structuredContent = { applicable, suppressed: suppressedOut };
       return { ...asTextContent(structuredContent), structuredContent };
-    },
+    }),
   );
 }

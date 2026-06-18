@@ -8,6 +8,7 @@ import { registerDiscoveryTools } from './tools/discovery.js';
 import { registerReadTools } from './tools/read.js';
 import { registerWorkflowTools } from './tools/workflow.js';
 import { registerMetaTools } from './tools/meta.js';
+import { PKG } from './version.js';
 
 async function main() {
   const config = loadConfig();
@@ -15,7 +16,7 @@ async function main() {
 
   // Bootstrap log goes to stderr — stdout is reserved for MCP framing.
   console.error(
-    `[bcquality-mcp] Loaded repo from ${repo.path} (source=${repo.source}, layers=${config.layers.join(',')})`,
+    `[bcquality-mcp] v${PKG.version} — loaded repo from ${repo.path} (source=${repo.source}, layers=${config.layers.join(',')})`,
   );
 
   const ctx = createContext(config, repo);
@@ -24,8 +25,8 @@ async function main() {
   );
 
   const server = new McpServer({
-    name: 'bcquality-mcp',
-    version: '0.1.0',
+    name: PKG.name,
+    version: PKG.version,
   });
 
   registerDiscoveryTools(server, ctx);
