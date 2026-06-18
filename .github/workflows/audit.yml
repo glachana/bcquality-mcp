@@ -1,0 +1,89 @@
+name: Security audit
+
+on:
+  schedule:
+    # Tous les lundis à 06:00 UTC (08:00 Paris l'été, 07:00 l'hiver).
+    - cron: '0 6 * * 1'
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write   # required to open an issue when scheduled audit finds vulnerabilities
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: npm audit (prod high+)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # On audite uniquement les dépendances de production (le package publié
+      # ne contient pas `node_modules` ni les devDeps).
+      # Les vulns devDeps (vite/vitest/tsx...) sont remontées séparément en
+      # rapport informationnel mais ne font pas échouer la CI.
+      - name: Run npm audit on production dependencies (fails on high or critical)
+        id: audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Informational audit on dev dependencies
+        if: always()
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Open issue on scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Weekly npm audit found vulnerabilities (${new Date().toISOString().slice(0,10)})`;
+            const body = [
+              'The scheduled `npm audit` run failed.',
+              '',
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              '',
+              'Reproduce locally:',
+              '```',
+              'npm ci',
+              'npm audit --audit-level=high',
+              '```',
+            ].join('\n');
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'security,automated',
+              state: 'open',
+            });
+            if (issues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['security', 'automated'],
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+            }
