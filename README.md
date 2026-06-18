@@ -1,5 +1,8 @@
 # bcquality-mcp
 
+[![npm version](https://img.shields.io/npm/v/bcquality-mcp.svg)](https://www.npmjs.com/package/bcquality-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Serveur MCP (Model Context Protocol) qui expose le contenu de [`microsoft/BCQuality`](https://github.com/microsoft/BCQuality) à des agents IA (Claude Code, Claude Desktop, Cursor, etc.) sous forme de tools structurés.
 
 `microsoft/BCQuality` est un référentiel Microsoft (MIT) qui codifie les bonnes pratiques de développement Business Central — fichiers `.md` à frontmatter YAML structuré + exemples `.good.al` / `.bad.al`. Le repo est conçu pour la consommation par agents IA, mais il faut une mécanique d'orchestration pour l'exploiter (filtrage par frontmatter, application du workflow Source → Relevance → Worklist → Action, gestion de précédence entre couches).
@@ -82,7 +85,20 @@ git --version
 
 ## Installation de A à Z
 
-### Voie rapide (recommandée) — un script
+### Voie la plus simple — npm
+
+Le package est publié sur npm : [`bcquality-mcp`](https://www.npmjs.com/package/bcquality-mcp).
+
+```powershell
+npm install -g bcquality-mcp
+claude mcp add bcquality bcquality-mcp -s user
+```
+
+Pas de clone, pas de build local. Le binaire `bcquality-mcp` est disponible dans le `PATH` après installation globale. Pour Claude Desktop / Cursor, voir [Intégration aux clients MCP](#intégration-aux-clients-mcp).
+
+### Voie rapide depuis GitHub — un script
+
+Utile si vous voulez le code source local (modif, debug, fork avec couche `custom/`) :
 
 ```powershell
 git clone https://github.com/glachana/bcquality-mcp.git "$env:USERPROFILE\bcquality-mcp"
