@@ -10,23 +10,35 @@
 - **Git** — https://git-scm.com/download/win
 - **Un client MCP** : Claude Code, Claude Desktop, ou Cursor
 
-## Installation en 1 commande (PowerShell)
+## Installation via npm (recommandé)
 
-Ouvrez **PowerShell** (touche Win + tapez "powershell"), copiez-collez :
+```powershell
+npm install -g bcquality-mcp
+claude mcp add bcquality bcquality-mcp -s user
+```
+
+C'est tout. Pas de clone, pas de build local. Pour Claude Desktop, éditez `%APPDATA%\Claude\claude_desktop_config.json` :
+```jsonc
+{
+  "mcpServers": {
+    "bcquality": { "command": "bcquality-mcp" }
+  }
+}
+```
+
+## Installation depuis GitHub (PowerShell, 1 commande)
+
+Alternative si vous voulez le code source localement (pour modifier, debugger, etc.) :
 
 ```powershell
 irm https://raw.githubusercontent.com/glachana/bcquality-mcp/main/scripts/install-from-github.ps1 | iex
 ```
 
-Le script :
-1. Clone le repo dans `%USERPROFILE%\bcquality-mcp\`
-2. Installe les dépendances Node
-3. Build le serveur
-4. Vous demande quel client MCP utiliser et enregistre le serveur
+Le script clone, installe les deps, build, et enregistre le serveur.
 
 > Si PowerShell bloque l'exécution : `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` (une fois).
 
-## Installation manuelle (alternative)
+## Installation manuelle (clone + setup)
 
 ```powershell
 git clone https://github.com/glachana/bcquality-mcp.git $env:USERPROFILE\bcquality-mcp
@@ -50,10 +62,17 @@ Claude doit appeler le tool `bcquality_list_domains` et lister `performance`, `s
 
 ## Mise à jour
 
+### Si installé via npm
+```powershell
+npm update -g bcquality-mcp
+```
+
+### Si installé depuis GitHub
 ```powershell
 cd $env:USERPROFILE\bcquality-mcp
 .\scripts\update.ps1
 ```
+
 Puis redémarrez votre client MCP.
 
 ## Désinstallation
@@ -66,8 +85,12 @@ claude mcp remove bcquality -s user
 ### Claude Desktop
 Éditez `%APPDATA%\Claude\claude_desktop_config.json` et supprimez la clé `bcquality` dans `mcpServers`.
 
-Supprimez le dossier d'installation :
+### Supprimer le package
 ```powershell
+# Si installé via npm
+npm uninstall -g bcquality-mcp
+
+# Si installé depuis GitHub
 Remove-Item -Recurse -Force $env:USERPROFILE\bcquality-mcp
 ```
 
