@@ -1,0 +1,61 @@
+<!--
+  Évaluations pour bcquality-mcp.
+  Chaque question est : indépendante, read-only, vérifiable par comparaison de chaîne,
+  stable, et conçue pour exiger plusieurs appels de tools (list/get/search).
+
+  Réponses ancrées sur le commit principal de microsoft/BCQuality
+  (refresh au besoin via bcquality_refresh).
+-->
+<evaluation>
+
+  <qa_pair>
+    <question>Dans la couche Microsoft de BCQuality, le fichier de connaissance dont le slug est "use-isempty-for-existence-check" appartient à quel domaine ?</question>
+    <answer>performance</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Quel mot-clé kebab-case figure dans le frontmatter de microsoft/knowledge/performance/use-setloadfields-for-partial-records.md et désigne l'API du langage AL que la règle recommande d'appeler avant FindSet ?</question>
+    <answer>setloadfields</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Combien d'action skills (kind=action-skill) sont présentes dans la couche microsoft du repo public BCQuality ?</question>
+    <answer>7</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Quel est l'identifiant (champ "id" du frontmatter) de la super-skill qui compose les revues spécialisées sous microsoft/skills/review/ ?</question>
+    <answer>al-code-review</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Dans le repo public BCQuality, sous le domaine "privacy" de la couche microsoft, quel slug porte sur la classification DataClassification requise pour les champs PII (slug exact, sans extension) ?</question>
+    <answer>data-classification-required-on-pii-fields</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Combien de couches d'autorité distinctes sont définies dans BCQuality (custom, community, microsoft) ?</question>
+    <answer>3</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Le fichier microsoft/knowledge/performance/avoid-commit-inside-loops.md a-t-il un exemple .bad.al sibling (réponse "yes" ou "no") ?</question>
+    <answer>yes</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Quelle skill méta (fichier sous /skills/ à la racine du repo) définit le contrat de format de sortie structurée — outcome, findings, references, confidence — que toute action skill doit respecter ?</question>
+    <answer>do</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Pour le knowledge file microsoft/knowledge/security/integrationevent-must-not-expose-secrets.md, quel domaine porte-t-il dans son frontmatter ?</question>
+    <answer>security</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>Dans BCQuality, quelle couche d'autorité a la précédence la plus élevée lorsqu'un même slug existe dans plusieurs couches (réponse en un mot, en minuscules) ?</question>
+    <answer>custom</answer>
+  </qa_pair>
+
+</evaluation>

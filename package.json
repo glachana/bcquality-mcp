@@ -1,0 +1,64 @@
+{
+  "name": "bcquality-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing microsoft/BCQuality knowledge and skills to AI agents.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "business-central",
+    "bcquality",
+    "al",
+    "dynamics-365",
+    "ai",
+    "claude"
+  ],
+  "author": "Gabriel Lachana",
+  "homepage": "https://github.com/glachana/bcquality-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glachana/bcquality-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/glachana/bcquality-mcp/issues"
+  },
+  "files": [
+    "dist",
+    "build.mjs",
+    "scripts",
+    "INSTALL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "bcquality-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "node ./build.mjs",
+    "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.27.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
