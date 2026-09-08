@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.4](https://github.com/glachana/bcquality-mcp/compare/bcquality-mcp-v0.1.3...bcquality-mcp-v0.1.4) (2026-09-08)
+
+
+### Features
+
+* **skills:** recognize BCQuality host-skill adapters ([3fae903](https://github.com/glachana/bcquality-mcp/commit/3fae9038d08f55603a04a01777aa1d5f676da325))
+
+
+### Bug Fixes
+
+* **deps:** clear every production audit finding within existing ranges ([3b07bdf](https://github.com/glachana/bcquality-mcp/commit/3b07bdfaecb731f7fc9560b191c7de5dac0a7aba)), closes [#2](https://github.com/glachana/bcquality-mcp/issues/2)
+* **parser:** match open-ended bc-version ranges like [26..] ([2812c17](https://github.com/glachana/bcquality-mcp/commit/2812c1797beb417dd888c81778c2f0a339d9fb5c))
+* **repo:** verify the cache origin matches BCQUALITY_REPO_URL ([1db6cb9](https://github.com/glachana/bcquality-mcp/commit/1db6cb96d65c94a68f2bfaa9a2234ea569ea82e8))
+
 ## [0.1.3](https://github.com/glachana/bcquality-mcp/compare/bcquality-mcp-v0.1.2...bcquality-mcp-v0.1.3) (2026-06-18)
 
 
