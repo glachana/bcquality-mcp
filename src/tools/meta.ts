@@ -11,7 +11,8 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
     {
       title: 'BCQuality server status',
       description:
-        'Returns the active clone path, its source (env/cache/cloned), the current commit, the enabled layers, ' +
+        'Returns the active clone path, its source (env/cache/cloned), the current commit, the actual ' +
+        'origin remote of that clone alongside the configured repo URL, the enabled layers, ' +
         'article counts per layer, and the in-memory index age.',
       inputSchema: {},
       outputSchema: {
@@ -20,6 +21,7 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
         commit: z.string(),
         headSha: z.string(),
         repoUrl: z.string(),
+        remoteUrl: z.string().optional(),
         layers: z.array(
           z.object({ name: z.string(), enabled: z.boolean(), articleCount: z.number().int() }),
         ),
@@ -35,6 +37,7 @@ export function registerMetaTools(server: McpServer, ctx: ServerContext) {
         commit: ctx.repo.commit,
         headSha: ctx.repo.headSha,
         repoUrl: ctx.config.repoUrl,
+        remoteUrl: ctx.repo.remoteUrl,
         layers: layerSummary(ctx),
         skillCount: ctx.index.skills.length,
         indexBuiltAt: ctx.index.builtAt.toISOString(),

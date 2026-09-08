@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildIndex, applyLayerPrecedence } from '../../src/repo/index.js';
 import { findExampleFiles } from '../../src/repo/walker.js';
+import { matchesFilters } from '../../src/search/filter.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(__dirname, '..', 'fixtures', 'mini-repo');
@@ -31,12 +32,32 @@ describe('buildIndex against fixture repo', () => {
     expect(layers.has('microsoft')).toBe(true);
   });
 
-  it('classifies skill kinds (meta vs action-skill)', () => {
+  it('classifies skill kinds (meta vs action-skill vs host-skill)', () => {
     const idx = buildIndex(REPO, ['microsoft']);
     const action = idx.skills.find((s) => s.parsed?.kind === 'action-skill');
     expect(action?.ref.slug).toBe('al-performance-review');
     const meta = idx.skills.find((s) => s.ref.slug === 'entry');
     expect(meta?.parsed?.kind).toBe('meta');
+    const host = idx.skills.find((s) => s.parsed?.kind === 'host-skill');
+    expect(host?.ref.relativePath).toBe('skills/al-code-review/SKILL.md');
+  });
+
+  it('slugs a host-skill by its directory name, not the SKILL filename', () => {
+    const idx = buildIndex(REPO, ['microsoft']);
+    const host = idx.skills.find((s) => s.ref.relativePath === 'skills/al-code-review/SKILL.md');
+    expect(host?.ref.slug).toBe('al-code-review');
+    expect(idx.skills.some((s) => s.ref.slug === 'SKILL')).toBe(false);
+  });
+
+  it('keeps an article whose YAML bc-version is the open-ended range [26..]', () => {
+    const idx = buildIndex(REPO, ['microsoft']);
+    const entry = idx.knowledge.find((e) => e.ref.slug === 'avoid-public-event-publisher');
+    expect(entry?.parsed).toBeDefined();
+    // Le YAML `[26..]` non quoté doit arriver dans le frontmatter comme la chaîne '26..'.
+    expect(entry!.parsed!.frontmatter['bc-version']).toEqual(['26..']);
+    expect(matchesFilters(entry!, { bcVersion: 27 })).toBe(true);
+    expect(matchesFilters(entry!, { bcVersion: 30 })).toBe(true);
+    expect(matchesFilters(entry!, { bcVersion: 25 })).toBe(false);
   });
 
   it('honors the layers parameter', () => {

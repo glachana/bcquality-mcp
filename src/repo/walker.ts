@@ -68,12 +68,17 @@ export function listKnowledgeFiles(repoPath: string, layers: Layer[]): Knowledge
 export function listSkillFiles(repoPath: string, layers: Layer[]): SkillFileRef[] {
   const refs: SkillFileRef[] = [];
 
-  // Global meta-skills under /skills/
+  // Global meta-skills under /skills/, plus host-skill adapters at
+  // skills/<name>/SKILL.md dont le slug est le nom du répertoire parent.
   const globalSkills = path.join(repoPath, 'skills');
   for (const abs of walkDir(globalSkills, (f) => f.endsWith('.md'))) {
     const rel = toRel(repoPath, abs);
     const parts = rel.split('/');
-    const slug = parts[parts.length - 1].replace(/\.md$/, '');
+    const fileName = parts[parts.length - 1];
+    const slug =
+      fileName === 'SKILL.md' && parts.length >= 3
+        ? parts[parts.length - 2]
+        : fileName.replace(/\.md$/, '');
     refs.push({ relativePath: rel, absolutePath: abs, layer: 'global', slug });
   }
 

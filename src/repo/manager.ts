@@ -8,6 +8,8 @@ export interface RepoInfo {
   source: 'env' | 'cache' | 'cloned';
   commit: string;
   headSha: string;
+  /** `origin` of the clone being served; undefined when absent or unreadable. */
+  remoteUrl?: string;
 }
 
 function isGitRepo(dir: string): boolean {
@@ -21,6 +23,41 @@ function looksLikeBCQuality(dir: string): boolean {
       fs.existsSync(path.join(dir, 'community')) ||
       fs.existsSync(path.join(dir, 'skills')))
   );
+}
+
+/**
+ * Normalizes a git remote URL for comparison. Handles the scp form
+ * (`git@host:org/repo`), a `git+` prefix, embedded credentials, a trailing
+ * `.git` and trailing slashes. Case is folded: a false negative is preferable
+ * to a re-clone triggered by nothing but a difference in casing.
+ */
+export function normalizeGitUrl(url: string): string {
+  let out = url.trim();
+  if (!out) return '';
+  out = out.replace(/^git\+/, '');
+  // scp form: git@github.com:org/repo.git -> github.com/org/repo.git
+  const scp = out.match(/^[^/]+@([^:/]+):(.+)$/);
+  if (scp) {
+    out = `${scp[1]}/${scp[2]}`;
+  } else {
+    out = out.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+    // Strip any embedded credentials: user:token@host/...
+    out = out.replace(/^[^/@]+@/, '');
+  }
+  // Trailing slashes first: ".git/" must reduce to "" and not survive as ".git".
+  out = out.replace(/\/+$/, '').replace(/\.git$/, '').replace(/\/+$/, '');
+  return out.toLowerCase();
+}
+
+/** Reads `origin` without ever throwing: undefined when absent or unreadable. */
+async function readRemoteUrl(git: SimpleGit): Promise<string | undefined> {
+  try {
+    const url = await git.remote(['get-url', 'origin']);
+    const trimmed = typeof url === 'string' ? url.trim() : '';
+    return trimmed || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function readCommit(git: SimpleGit): Promise<{ commit: string; headSha: string }> {
@@ -51,15 +88,40 @@ export async function resolveRepo(config: Config): Promise<RepoInfo> {
     }
     const git = simpleGit(abs);
     const { commit, headSha } = await readCommit(git);
-    return { path: abs, source: 'env', commit, headSha };
+    // An explicit path is authoritative: report the remote, never second-guess it.
+    const remoteUrl = await readRemoteUrl(git);
+    return { path: abs, source: 'env', commit, headSha, remoteUrl };
   }
 
   // 2. Cache path (existing)
   const cacheAbs = path.resolve(config.cachePath);
+  let staleCacheRemote: string | undefined;
   if (isGitRepo(cacheAbs) && looksLikeBCQuality(cacheAbs)) {
     const git = simpleGit(cacheAbs);
-    const { commit, headSha } = await readCommit(git);
-    return { path: cacheAbs, source: 'cache', commit, headSha };
+    const remoteUrl = await readRemoteUrl(git);
+    // The cache may have been cloned from a different URL (fork <-> upstream).
+    // Serving it anyway would silently drop the configured repo's /custom/ layer
+    // with no visible error anywhere.
+    const diverged =
+      remoteUrl === undefined || normalizeGitUrl(remoteUrl) !== normalizeGitUrl(config.repoUrl);
+
+    if (!diverged) {
+      const { commit, headSha } = await readCommit(git);
+      return { path: cacheAbs, source: 'cache', commit, headSha, remoteUrl };
+    }
+
+    const found = remoteUrl ?? '(no origin remote)';
+    if (!config.autoClone) {
+      throw new Error(
+        `The BCQuality cache at "${cacheAbs}" was cloned from ${found}, ` +
+          `but BCQUALITY_REPO_URL is ${config.repoUrl}. Serving it would silently drop the ` +
+          `configured repo's layers (typically /custom/). Re-point the cache with ` +
+          `\`git -C "${cacheAbs}" remote set-url origin ${config.repoUrl}\`, delete the cache ` +
+          `directory, set BCQUALITY_REPO_PATH to the clone you want, or enable BCQUALITY_AUTO_CLONE ` +
+          `to let the server re-clone it.`,
+      );
+    }
+    staleCacheRemote = found;
   }
 
   // 3. Auto-clone
@@ -67,6 +129,14 @@ export async function resolveRepo(config: Config): Promise<RepoInfo> {
     throw new Error(
       `No BCQuality clone found and BCQUALITY_AUTO_CLONE is disabled. ` +
         `Set BCQUALITY_REPO_PATH or enable auto-clone.`,
+    );
+  }
+
+  if (staleCacheRemote) {
+    // stdout is reserved for MCP framing.
+    console.error(
+      `[bcquality-mcp] Cache at ${cacheAbs} points at ${staleCacheRemote} but ` +
+        `BCQUALITY_REPO_URL is ${config.repoUrl}; re-cloning to match the configured repo.`,
     );
   }
 
@@ -78,7 +148,8 @@ export async function resolveRepo(config: Config): Promise<RepoInfo> {
   await git.clone(config.repoUrl, cacheAbs, ['--depth', '1']);
   const cloneGit = simpleGit(cacheAbs);
   const { commit, headSha } = await readCommit(cloneGit);
-  return { path: cacheAbs, source: 'cloned', commit, headSha };
+  const remoteUrl = await readRemoteUrl(cloneGit);
+  return { path: cacheAbs, source: 'cloned', commit, headSha, remoteUrl };
 }
 
 export async function pullRepo(repoPath: string): Promise<{ before: string; after: string; changedFiles: number }> {
