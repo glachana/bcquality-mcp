@@ -20,6 +20,18 @@ describe('KnowledgeFrontmatterSchema', () => {
     expect(fm.keywords).toContain('isempty');
   });
 
+  it('accepts an open-ended range bc-version entry', () => {
+    const fm = KnowledgeFrontmatterSchema.parse({
+      'bc-version': ['26..'],
+      domain: 'events',
+      keywords: ['event', 'publisher'],
+      technologies: ['al'],
+      countries: ['w1'],
+      'application-area': ['all'],
+    });
+    expect(fm['bc-version']).toEqual(['26..']);
+  });
+
   it('accepts numeric and range bc-version entries', () => {
     const fm = KnowledgeFrontmatterSchema.parse({
       'bc-version': [26, 27, '28..30'],
@@ -119,5 +131,25 @@ describe('bcVersionMatches', () => {
     expect(bcVersionMatches(['26..28'], 27)).toBe(true);
     expect(bcVersionMatches(['26..28'], 25)).toBe(false);
     expect(bcVersionMatches(['26..28'], 29)).toBe(false);
+  });
+
+  it('matches open-ended ranges like 26.. with no upper bound', () => {
+    expect(bcVersionMatches(['26..'], 26)).toBe(true);
+    expect(bcVersionMatches(['26..'], 27)).toBe(true);
+    expect(bcVersionMatches(['26..'], 99)).toBe(true);
+    expect(bcVersionMatches(['26..'], '28')).toBe(true);
+    expect(bcVersionMatches(['26..'], 25)).toBe(false);
+    expect(bcVersionMatches(['26..'], 1)).toBe(false);
+  });
+
+  it('does not let a non-matching open-ended range short-circuit later entries', () => {
+    expect(bcVersionMatches(['27..', '25'], 25)).toBe(true);
+    expect(bcVersionMatches(['27..', '20..22'], 21)).toBe(true);
+  });
+
+  it('ignores malformed range shorthands', () => {
+    expect(bcVersionMatches(['..28'], 27)).toBe(false);
+    expect(bcVersionMatches(['26...28'], 27)).toBe(false);
+    expect(bcVersionMatches(['26..'], 'next')).toBe(false);
   });
 });
