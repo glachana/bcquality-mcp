@@ -493,6 +493,7 @@ npm run typecheck
 | `Directory ... does not look like a BCQuality clone` | Le `REPO_PATH` n'a pas la structure attendue (README.md + dossier `microsoft/`/`community/`/`skills/`) | Vérifiez que c'est bien un fork de microsoft/BCQuality, pas un autre repo. |
 | Le tool `bcquality_list_domains` retourne `[]` | Le repo cloné est vide ou les couches activées n'ont aucun contenu | Inspectez avec `bcquality_status`, vérifiez la valeur de `BCQUALITY_LAYERS`. |
 | Le clone auto échoue | Pas d'accès internet, ou git non installé | Installez git, vérifiez la connectivité, ou clonez manuellement et pointez `BCQUALITY_REPO_PATH`. |
+| Au démarrage : `The BCQuality cache at ... was cloned from ...` | Le cache a été cloné depuis une autre URL que `BCQUALITY_REPO_URL` (typiquement upstream au lieu de votre fork) — le servir ferait disparaître silencieusement votre couche `/custom/` | Laissez `BCQUALITY_AUTO_CLONE=true` (le serveur re-clone tout seul), ou re-pointez le cache : `git -C "%LOCALAPPDATA%\bcquality\cache" remote set-url origin <votre-url>`. Le remote réellement servi est visible dans `bcquality_status.remoteUrl`. |
 | `tsc` plante en OOM lors de `npm run typecheck` | Bug d'inférence SDK MCP ↔ Zod | Ignorez — utilisez `npm run build` (esbuild) qui n'est pas affecté. Le runtime fonctionne. |
 
 ### Test de bout en bout manuel (JSON-RPC)
@@ -511,7 +512,7 @@ Tapez (et `Entrée` après chaque ligne) :
 {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"bcquality_status","arguments":{}}}
 ```
 
-Vous devez recevoir une réponse JSON avec `repoPath`, `commit`, `layers`, etc.
+Vous devez recevoir une réponse JSON avec `repoPath`, `commit`, `layers`, etc. Comparez `remoteUrl` (l'`origin` réel du clone servi) et `repoUrl` (la valeur configurée) : ils doivent correspondre.
 
 ---
 
