@@ -279,9 +279,9 @@ Liste les fichiers de connaissance avec filtres.
 **Output** : `{ items: [{ path, layer, domain, slug, title, descriptionExcerpt, keywords, bcVersion, … }], total, nextOffset? }`
 
 #### `bcquality_list_skills`
-Liste les meta-skills (`/skills/entry.md`, `read.md`, `do.md`, `write.md`) et action skills (`<layer>/skills/…`).
+Liste les meta-skills (`/skills/entry.md`, `read.md`, `do.md`, `write.md`), les host-skills (`/skills/<name>/SKILL.md` — adaptateurs au format natif de l'hôte, exposés quand BCQuality est installé comme plugin autonome) et les action skills (`<layer>/skills/…`).
 
-**Inputs** : `layer?`, `kind?` (`action-skill` | `meta`).
+**Inputs** : `layer?`, `kind?` (`action-skill` | `host-skill` | `meta`).
 
 **Output** : `{ items: [{ path, kind, id?, version?, title, inputs?, outputs?, subSkills? }] }`
 
@@ -389,7 +389,7 @@ Claude appelle `bcquality_list_knowledge { domain: "security" }` puis `bcquality
 
 > *Quelles skills de review Microsoft a-t-elle publiées dans BCQuality ?*
 
-Claude appelle `bcquality_list_skills { layer: "microsoft", kind: "action-skill" }` → liste les 7 skills (`al-code-review` + 6 sous-skills `performance`, `security`, `privacy`, `upgrade`, `style`, `ui`).
+Claude appelle `bcquality_list_skills { layer: "microsoft", kind: "action-skill" }` → liste le super-skill `al-code-review` et ses sous-skills, un par domaine de connaissance (`performance`, `security`, `privacy`, `upgrade`, `style`, `ui`, `error-handling`, `events`, `interfaces`, `breaking-changes`, `web-services`, `testing`, `data-modeling`, `query`, `appsource`, `telemetry`). La couche `community` en ajoute un : `al-agents-review`.
 
 ---
 

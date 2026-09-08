@@ -140,11 +140,11 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
     {
       title: 'List BCQuality skills',
       description:
-        'Lists all skills (meta-skills under /skills/ + action skills under <layer>/skills/). ' +
-        'Filter by layer or kind (action-skill | meta).',
+        'Lists all skills (meta-skills under /skills/, host-skill adapters at skills/<name>/SKILL.md, ' +
+        'and action skills under <layer>/skills/). Filter by layer or kind (action-skill | host-skill | meta).',
       inputSchema: {
         layer: z.enum(['microsoft', 'community', 'custom', 'global']).optional(),
-        kind: z.enum(['action-skill', 'meta']).optional(),
+        kind: z.enum(['action-skill', 'host-skill', 'meta']).optional(),
       },
       outputSchema: {
         items: z.array(
@@ -178,7 +178,12 @@ export function registerDiscoveryTools(server: McpServer, ctx: ServerContext) {
             group: s.ref.group,
             slug: s.ref.slug,
             kind: s.parsed?.kind ?? 'unknown',
-            id: typeof fm?.id === 'string' ? (fm.id as string) : undefined,
+            id:
+              typeof fm?.id === 'string'
+                ? (fm.id as string)
+                : typeof fm?.name === 'string'
+                  ? (fm.name as string)
+                  : undefined,
             version: typeof fm?.version === 'number' ? (fm.version as number) : undefined,
             title: s.parsed?.title ?? s.ref.slug,
             description: typeof fm?.description === 'string' ? (fm.description as string) : undefined,

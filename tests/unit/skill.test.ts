@@ -13,6 +13,15 @@ describe('parseSkillFile', () => {
     expect(s.title).toBe('Entry — routing meta skill');
   });
 
+  it('classifies skills/<name>/SKILL.md as kind=host-skill', () => {
+    const s = parseSkillFile(path.join(ROOT, 'skills', 'al-code-review', 'SKILL.md'));
+    expect(s.kind).toBe('host-skill');
+    const fm = s.frontmatter as { name: string; description: string };
+    expect(fm.name).toBe('al-code-review');
+    expect(fm.description).toContain('BCQuality');
+    expect(s.title).toBe('AL code review');
+  });
+
   it('parses action-skill frontmatter under microsoft/skills', () => {
     const s = parseSkillFile(
       path.join(ROOT, 'microsoft', 'skills', 'review', 'al-performance-review.md'),

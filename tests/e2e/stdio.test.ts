@@ -186,6 +186,40 @@ describe('E2E stdio against fixture mini-repo', () => {
     expect(suppressedLayers).toContain('microsoft');
   });
 
+  it('bcquality_list_skills exposes the host-skill adapter with its directory slug', async () => {
+    const r = await client.send('tools/call', {
+      name: 'bcquality_list_skills',
+      arguments: { kind: 'host-skill' },
+    });
+    const sc = (r.result as {
+      structuredContent: {
+        items: Array<{ path: string; layer: string; slug: string; kind: string; id?: string; title: string }>;
+      };
+    }).structuredContent;
+    expect(sc.items).toHaveLength(1);
+    const host = sc.items[0];
+    expect(host.path).toBe('skills/al-code-review/SKILL.md');
+    expect(host.layer).toBe('global');
+    expect(host.kind).toBe('host-skill');
+    // Le slug vient du répertoire parent, pas du nom de fichier SKILL.md.
+    expect(host.slug).toBe('al-code-review');
+    // Le champ `name` du frontmatter hôte sert de repli à `id`.
+    expect(host.id).toBe('al-code-review');
+    expect(host.title).toBe('AL code review');
+  });
+
+  it('bcquality_list_skills keeps meta-skills out of the host-skill kind', async () => {
+    const r = await client.send('tools/call', {
+      name: 'bcquality_list_skills',
+      arguments: { kind: 'meta' },
+    });
+    const sc = (r.result as { structuredContent: { items: Array<{ slug: string }> } }).structuredContent;
+    const slugs = sc.items.map((i) => i.slug).sort();
+    expect(slugs).toContain('entry');
+    expect(slugs).not.toContain('al-code-review');
+    expect(slugs).not.toContain('SKILL');
+  });
+
   it('bcquality_status reports the fixture repo source as env', async () => {
     const r = await client.send('tools/call', {
       name: 'bcquality_status',

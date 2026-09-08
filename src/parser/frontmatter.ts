@@ -40,6 +40,17 @@ export const ActionSkillFrontmatterSchema = z
 
 export type ActionSkillFrontmatter = z.infer<typeof ActionSkillFrontmatterSchema>;
 
+// Host skill: adaptateur au format natif de l'hôte (Claude Code) exposé quand
+// BCQuality est installé comme plugin autonome — skills/<name>/SKILL.md.
+export const HostSkillFrontmatterSchema = z
+  .object({
+    name: z.string().min(1).max(64),
+    description: z.string().min(1).max(1024),
+  })
+  .passthrough();
+
+export type HostSkillFrontmatter = z.infer<typeof HostSkillFrontmatterSchema>;
+
 export function normalizeBcVersion(value: z.infer<typeof BcVersionSchema>): string[] {
   if (value === 'all') return ['all'];
   return value.map((v) => String(v));
